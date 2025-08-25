@@ -13,12 +13,14 @@ BINANCE_RATE_LIMIT = 0.05  # Seconds between Binance API calls
 BITVAVO_RATE_LIMIT = 0.05  # Seconds between Bitvavo API calls
 BITVAVO_TAKER_FEE = 0.0025  # 0.25% taker fee for selling on Bitvavo
 BINANCE_TAKER_FEE = 0.001   # 0.1% taker fee for buying on Binance
+BLACKLIST = {'AERGO', 'ALPHA', 'KDA'}  # Exclude these base assets
 
 # Symbol mapping for mismatches (Bitvavo base -> Binance base)
 SYMBOL_MAP = {
     'LUNA': 'LUNC',   # Bitvavo LUNA is Terra Classic (Binance LUNC)
     'LUNA2': 'LUNA',  # Bitvavo LUNA2 is Terra 2.0 (Binance LUNA)
-    'BTT': 'BTTC'     # Bitvavo BTT is BitTorrent (Binance BTTC)
+    'BTT': 'BTTC',    # Bitvavo BTT is BitTorrent (Binance BTTC)
+    'NANO': 'XNO'     # Bitvavo NANO is Nano (Binance XNO)
 }
 
 def send_telegram(text):
@@ -32,7 +34,7 @@ def send_telegram(text):
                 timeout=5
             )
             if resp.ok:
-                print("📤 Telegram message sent successfully! 🎉")
+                print(f"📤 Telegram message sent successfully! 🎉")
                 return
             else:
                 print(f"❗ Telegram send error: {resp.status_code} - {resp.text}")
@@ -101,22 +103,34 @@ def check_arbitrage():
         print("❗ EURUSDT not found in Binance prices. Skipping cycle. 😔")
         return
     eur_usdt_rate = bn_all["EURUSDT"]
+    if eur_usdt_rate <= 0 or not 0.8 <= eur_usdt_rate <= 1.2:
+        print(f"❗ Invalid EURUSDT rate: {eur_usdt_rate:.4f}. Skipping cycle. 😔")
+        return
     print(f"✅ EUR/USDT rate: {eur_usdt_rate:.4f} 💱\n")
 
     found = 0
     for sym, bv_bid in bv.items():
         base = sym.split("-")[0]
+        if base in BLACKLIST:
+            print(f"❗ Skipping blacklisted ticker: {base}")
+            continue
         bn_base = SYMBOL_MAP.get(base, base)  # Use mapped Binance base if mismatch
         bn_sym = bn_base + "USDT"
         if bn_sym not in bn_all:
             print(f"❗ No Binance price for {bn_sym} (Bitvavo: {base}). Skipping.")
             continue
         bn_usdt = bn_all[bn_sym]
+        if bn_usdt <= 0:
+            print(f"❗ Invalid Binance price for {bn_sym}: .4f. Skipping.")
+            continue
         bn_eur = bn_usdt / eur_usdt_rate
         print(f"✅ Binance price for {sym} (EUR-converted): €{bn_eur:.4f} 💵")
 
         adjusted_bn = bn_eur * (1 + BINANCE_TAKER_FEE)
         adjusted_bv = bv_bid * (1 - BITVAVO_TAKER_FEE)
+        if adjusted_bn <= 0:
+            print(f"❗ Invalid adjusted Binance price for {sym}: €{adjusted_bn:.4f}. Skipping.")
+            continue
         diff = (adjusted_bv - adjusted_bn) / adjusted_bn * 100
         if diff >= THRESHOLD_PERCENT:
             found += 1

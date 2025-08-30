@@ -13,7 +13,7 @@ BINANCE_RATE_LIMIT = 0.05  # Seconds between Binance API calls
 BITVAVO_RATE_LIMIT = 0.05  # Seconds between Bitvavo API calls
 BITVAVO_TAKER_FEE = 0.0025  # 0.25% taker fee for selling on Bitvavo
 BINANCE_TAKER_FEE = 0.001   # 0.1% taker fee for buying on Binance
-BLACKLIST = {'AERGO', 'ALPHA', 'KDA'}  # Exclude these base assets
+BLACKLIST = {'AERGO', 'ALPHA', 'THETA', 'KDA'}  # Exclude these base assets
 
 # Symbol mapping for mismatches (Bitvavo base -> Binance base)
 SYMBOL_MAP = {

@@ -11,8 +11,10 @@ CHECK_INTERVAL = 60      # Time between full cycles in seconds
 MAX_RETRIES = 3          # Retry attempts for failed API calls
 BINANCE_RATE_LIMIT = 0.05  # Seconds between Binance API calls
 BITVAVO_RATE_LIMIT = 0.05  # Seconds between Bitvavo API calls
+MEXC_RATE_LIMIT = 0.05    # Seconds between MEXC API calls
 BITVAVO_TAKER_FEE = 0.0025  # 0.25% taker fee for selling on Bitvavo
 BINANCE_TAKER_FEE = 0.001   # 0.1% taker fee for buying on Binance
+MEXC_TAKER_FEE = 0.0005     # 0.05% taker fee for buying on MEXC
 BLACKLIST = {'AERGO', 'ALPHA', 'THETA', 'KDA'}  # Exclude these base assets
 
 # Symbol mapping for mismatches (Bitvavo base -> Binance base)
@@ -68,6 +70,33 @@ def fetch_bitvavo_tickers():
     print("❌ Failed to fetch Bitvavo tickers after retries. 😔")
     return {}
 
+def fetch_mexc_tickers():
+    """Fetch all 24h tickers from MEXC and extract last prices for EUR markets."""
+    print("🔄 Fetching all MEXC 24h tickers...")
+    for attempt in range(MAX_RETRIES):
+        try:
+            resp = requests.get("https://api.mexc.com/api/v3/ticker/24hr", timeout=10)
+            if resp.status_code != 200:
+                print(f"❗ HTTP error: {resp.status_code} - {resp.text}")
+                continue
+            data = resp.json()
+            prices = {}
+            for d in data:
+                symbol = d.get("symbol")
+                if symbol and symbol.endswith("EUR"):
+                    # Insert '-' before 'EUR' to match Bitvavo format
+                    m = symbol[:-3] + '-' + symbol[-3:]
+                    last_price = float(d["lastPrice"])
+                    prices[m] = last_price
+                    print(f"✅ Last price for {m}: €{last_price:.4f} 💶")
+            print(f"✅ Fetched {len(prices)} MEXC last prices (EUR). 🎯\n")
+            return prices
+        except Exception as e:
+            print(f"❗ Error fetching MEXC tickers (attempt {attempt + 1}/{MAX_RETRIES}): {e}")
+        time.sleep(1 ** attempt)
+    print("❌ Failed to fetch MEXC tickers after retries. 😔")
+    return {}
+
 def fetch_all_binance_prices():
     """Fetch all last traded prices from Binance."""
     print("🔄 Fetching all Binance prices...")
@@ -88,7 +117,7 @@ def fetch_all_binance_prices():
     return {}
 
 def check_arbitrage():
-    """Check for price differences: buy on Binance (last traded), sell on Bitvavo (bid)."""
+    """Check for price differences: buy on Binance/MEXC (last traded), sell on Bitvavo (bid)."""
     bv = fetch_bitvavo_tickers()
     if not bv:
         print("❗ No Bitvavo data. Skipping cycle. 😔")
@@ -98,6 +127,8 @@ def check_arbitrage():
     if not bn_all:
         print("❗ No Binance data. Skipping cycle. 😔")
         return
+
+    mex = fetch_mexc_tickers()
 
     if "EURUSDT" not in bn_all:
         print("❗ EURUSDT not found in Binance prices. Skipping cycle. 😔")
@@ -116,27 +147,37 @@ def check_arbitrage():
             continue
         bn_base = SYMBOL_MAP.get(base, base)  # Use mapped Binance base if mismatch
         bn_sym = bn_base + "USDT"
-        if bn_sym not in bn_all:
-            print(f"❗ No Binance price for {bn_sym} (Bitvavo: {base}). Skipping.")
+        exchange = None
+        taker_fee = None
+        bn_eur = None
+        if bn_sym in bn_all:
+            bn_usdt = bn_all[bn_sym]
+            if bn_usdt > 0:
+                bn_eur = bn_usdt / eur_usdt_rate
+                exchange = 'Binance'
+                taker_fee = BINANCE_TAKER_FEE
+        else:
+            mex_sym = bn_base + "-EUR"
+            if mex_sym in mex and mex[mex_sym] > 0:
+                bn_eur = mex[mex_sym]
+                exchange = 'MEXC'
+                taker_fee = MEXC_TAKER_FEE
+        if bn_eur is None or bn_eur <= 0:
+            print(f"❗ No valid price for {sym} on Binance or MEXC. Skipping.")
             continue
-        bn_usdt = bn_all[bn_sym]
-        if bn_usdt <= 0:
-            print(f"❗ Invalid Binance price for {bn_sym}: .4f. Skipping.")
-            continue
-        bn_eur = bn_usdt / eur_usdt_rate
-        print(f"✅ Binance price for {sym} (EUR-converted): €{bn_eur:.4f} 💵")
+        print(f"✅ {exchange} price for {sym} (EUR): €{bn_eur:.4f} 💵")
 
-        adjusted_bn = bn_eur * (1 + BINANCE_TAKER_FEE)
+        adjusted_bn = bn_eur * (1 + taker_fee)
         adjusted_bv = bv_bid * (1 - BITVAVO_TAKER_FEE)
         if adjusted_bn <= 0:
-            print(f"❗ Invalid adjusted Binance price for {sym}: €{adjusted_bn:.4f}. Skipping.")
+            print(f"❗ Invalid adjusted {exchange} price for {sym}: €{adjusted_bn:.4f}. Skipping.")
             continue
         diff = (adjusted_bv - adjusted_bn) / adjusted_bn * 100
         if diff >= THRESHOLD_PERCENT:
             found += 1
             msg = (
                 f"*🚀 Arbitrage Opportunity! 🚀*\n"
-                f"💸 *Buy {base}* on Binance: €{bn_eur:.4f}\n"
+                f"💸 *Buy {base}* on {exchange}: €{bn_eur:.4f}\n"
                 f"💰 *Sell on Bitvavo (bid)*: €{bv_bid:.4f}\n"
                 f"📈 *Profit (fee-adjusted)*: {diff:.2f}% 🎉"
             )
@@ -155,7 +196,7 @@ def signal_handler(sig, frame):
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
-    print("🚀 Starting arbitrage monitor (Buy on Binance USDT last traded, Sell on Bitvavo EUR bid). 🌟")
+    print("🚀 Starting arbitrage monitor (Buy on Binance/MEXC USDT/EUR last traded, Sell on Bitvavo EUR bid). 🌟")
     while True:
         try:
             check_arbitrage()

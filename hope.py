@@ -71,7 +71,7 @@ def fetch_bitvavo_tickers():
     return {}
 
 def fetch_mexc_tickers():
-    """Fetch all 24h tickers from MEXC and extract last prices for EUR markets."""
+    """Fetch all 24h tickers from MEXC and extract last prices for EUR and USDT markets."""
     print("🔄 Fetching all MEXC 24h tickers...")
     for attempt in range(MAX_RETRIES):
         try:
@@ -82,14 +82,21 @@ def fetch_mexc_tickers():
             data = resp.json()
             prices = {}
             for d in data:
-                symbol = d.get("symbol")
-                if symbol and symbol.endswith("EUR"):
-                    # Insert '-' before 'EUR' to match Bitvavo format
-                    m = symbol[:-3] + '-' + symbol[-3:]
+                symbol = d.get("symbol", "")
+                if symbol.endswith("EUR") or symbol.endswith("USDT"):
+                    # Handle EUR pairs (hyphenated or not)
+                    if symbol.endswith("EUR"):
+                        if "-" in symbol and symbol.endswith("-EUR"):
+                            m = symbol  # Already formatted, e.g., "WAXP-EUR"
+                        else:
+                            m = symbol[:-3] + "-" + symbol[-3:]  # Insert hyphen, e.g., "WAXPEUR" -> "WAXP-EUR"
+                    else:
+                        # Handle USDT pairs, keep as-is
+                        m = symbol  # e.g., "IKAUSDT"
                     last_price = float(d["lastPrice"])
                     prices[m] = last_price
-                    print(f"✅ Last price for {m}: €{last_price:.4f} 💶")
-            print(f"✅ Fetched {len(prices)} MEXC last prices (EUR). 🎯\n")
+                    print(f"✅ Last price for {m}: {last_price:.4f} {'€' if symbol.endswith('EUR') else '$'} 💶")
+            print(f"✅ Fetched {len(prices)} MEXC last prices (EUR and USDT). 🎯\n")
             return prices
         except Exception as e:
             print(f"❗ Error fetching MEXC tickers (attempt {attempt + 1}/{MAX_RETRIES}): {e}")
@@ -157,15 +164,27 @@ def check_arbitrage():
                 exchange = 'Binance'
                 taker_fee = BINANCE_TAKER_FEE
         else:
+            # Try MEXC EUR pair first
             mex_sym = bn_base + "-EUR"
+            mex_usdt_sym = bn_base + "USDT"
+            print(f"🔍 Binance missing {bn_sym}; checking MEXC: {mex_sym} or {mex_usdt_sym}")
             if mex_sym in mex and mex[mex_sym] > 0:
                 bn_eur = mex[mex_sym]
                 exchange = 'MEXC'
                 taker_fee = MEXC_TAKER_FEE
+            else:
+                # Fallback to MEXC USDT pair
+                if mex_usdt_sym in mex and mex[mex_usdt_sym] > 0:
+                    bn_eur = mex[mex_usdt_sym] / eur_usdt_rate
+                    exchange = 'MEXC'
+                    taker_fee = MEXC_TAKER_FEE
+                    print(f"✅ Using MEXC USDT for {sym}: .4f → €{bn_eur:.4f}")
+                else:
+                    print(f"❌ No MEXC price for {mex_sym} or {mex_usdt_sym}")
         if bn_eur is None or bn_eur <= 0:
             print(f"❗ No valid price for {sym} on Binance or MEXC. Skipping.")
             continue
-        print(f"✅ {exchange} price for {sym} (EUR): €{bn_eur:.4f} 💵")
+        print(f"✅ {exchange} price for {sym} (EUR-converted): €{bn_eur:.4f} 💵")
 
         adjusted_bn = bn_eur * (1 + taker_fee)
         adjusted_bv = bv_bid * (1 - BITVAVO_TAKER_FEE)

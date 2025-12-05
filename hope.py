@@ -22,7 +22,7 @@ SYMBOL_MAP = {
     'LUNA': 'LUNC',   # Bitvavo LUNA is Terra Classic (Binance LUNC)
     'LUNA2': 'LUNA',  # Bitvavo LUNA2 is Terra 2.0 (Binance LUNA)
     'BTT': 'BTTC',    # Bitvavo BTT is BitTorrent (Binance BTTC)
-    'XNO': 'XN'     # Bitvavo NANO is Nano (Binance XNO)
+    'DCR': 'XN'     # Bitvavo NANO is Nano (Binance XNO)
 }
 
 def send_telegram(text):

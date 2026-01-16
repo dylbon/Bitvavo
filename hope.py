@@ -22,8 +22,7 @@ SYMBOL_MAP = {
     'LUNA': 'LUNC',   # Bitvavo LUNA is Terra Classic (Binance LUNC)
     'LUNA2': 'LUNA',  # Bitvavo LUNA2 is Terra 2.0 (Binance LUNA)
     'BTT': 'BTTC',    # Bitvavo BTT is BitTorrent (Binance BTTC)
-    'NANO': 'XNO',    # Bitvavo NANO is Nano (Binance XNO)
-    'FUN': 'FUNTOKEN' # To skip Binance's mismatched FUN
+    'FUN': 'XN'     # Bitvavo NANO is Nano (Binance XNO)
 }
 
 def send_telegram(text):
@@ -153,7 +152,7 @@ def check_arbitrage():
         if base in BLACKLIST:
             print(f"❗ Skipping blacklisted ticker: {base}")
             continue
-        bn_base = SYMBOL_MAP.get(base, base)
+        bn_base = SYMBOL_MAP.get(base, base)  # Use mapped Binance base if mismatch
         bn_sym = bn_base + "USDT"
         exchange = None
         taker_fee = None
@@ -166,9 +165,8 @@ def check_arbitrage():
                 taker_fee = BINANCE_TAKER_FEE
         else:
             # Try MEXC EUR pair first
-            mex_base = base if base == 'FUN' else bn_base
-            mex_sym = mex_base + "-EUR"
-            mex_usdt_sym = mex_base + "USDT"
+            mex_sym = bn_base + "-EUR"
+            mex_usdt_sym = bn_base + "USDT"
             print(f"🔍 Binance missing {bn_sym}; checking MEXC: {mex_sym} or {mex_usdt_sym}")
             if mex_sym in mex and mex[mex_sym] > 0:
                 bn_eur = mex[mex_sym]
@@ -180,7 +178,7 @@ def check_arbitrage():
                     bn_eur = mex[mex_usdt_sym] / eur_usdt_rate
                     exchange = 'MEXC'
                     taker_fee = MEXC_TAKER_FEE
-                    print(f"✅ Using MEXC USDT for {sym}: {mex[mex_usdt_sym]:.4f} → €{bn_eur:.4f}")
+                    print(f"✅ Using MEXC USDT for {sym}: .4f → €{bn_eur:.4f}")
                 else:
                     print(f"❌ No MEXC price for {mex_sym} or {mex_usdt_sym}")
         if bn_eur is None or bn_eur <= 0:

@@ -180,7 +180,7 @@ def check_arbitrage():
                     bn_eur = mex[mex_usdt_sym] / eur_usdt_rate
                     exchange = 'MEXC'
                     taker_fee = MEXC_TAKER_FEE
-                    print(f"✅ Using MEXC USDT for {sym}: .4f → €{bn_eur:.4f}")
+                    print(f"✅ Using MEXC USDT for {sym}: {mex[mex_usdt_sym]:.4f} → €{bn_eur:.4f}")
                 else:
                     print(f"❌ No MEXC price for {mex_sym} or {mex_usdt_sym}")
         if bn_eur is None or bn_eur <= 0:
@@ -229,4 +229,3 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"❗ Unexpected error: {e}. Continuing after {CHECK_INTERVAL} seconds... 😔")
             time.sleep(CHECK_INTERVAL)
-``` traded,

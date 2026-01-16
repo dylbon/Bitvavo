@@ -22,7 +22,7 @@ SYMBOL_MAP = {
     'LUNA': 'LUNC',   # Bitvavo LUNA is Terra Classic (Binance LUNC)
     'LUNA2': 'LUNA',  # Bitvavo LUNA2 is Terra 2.0 (Binance LUNA)
     'BTT': 'BTTC',    # Bitvavo BTT is BitTorrent (Binance BTTC)
-    'XNO': 'XN'     # Bitvavo NANO is Nano (Binance XNO)
+    'FUN': 'FUNTOKEN' # To skip Binance's mismatched FUN
 }
 
 def send_telegram(text):
@@ -157,30 +157,48 @@ def check_arbitrage():
         exchange = None
         taker_fee = None
         bn_eur = None
-        if bn_sym in bn_all:
-            bn_usdt = bn_all[bn_sym]
-            if bn_usdt > 0:
-                bn_eur = bn_usdt / eur_usdt_rate
-                exchange = 'Binance'
-                taker_fee = BINANCE_TAKER_FEE
-        else:
-            # Try MEXC EUR pair first
-            mex_sym = bn_base + "-EUR"
-            mex_usdt_sym = bn_base + "USDT"
-            print(f"🔍 Binance missing {bn_sym}; checking MEXC: {mex_sym} or {mex_usdt_sym}")
+        if base == 'FUN':
+            # Skip Binance for FUN and go straight to MEXC
+            mex_sym = 'FUN-EUR'
+            mex_usdt_sym = 'FUNUSDT'
+            print(f"🔍 Skipping Binance for FUN; checking MEXC: {mex_sym} or {mex_usdt_sym}")
             if mex_sym in mex and mex[mex_sym] > 0:
                 bn_eur = mex[mex_sym]
                 exchange = 'MEXC'
                 taker_fee = MEXC_TAKER_FEE
             else:
-                # Fallback to MEXC USDT pair
                 if mex_usdt_sym in mex and mex[mex_usdt_sym] > 0:
                     bn_eur = mex[mex_usdt_sym] / eur_usdt_rate
                     exchange = 'MEXC'
                     taker_fee = MEXC_TAKER_FEE
-                    print(f"✅ Using MEXC USDT for {sym}: .4f → €{bn_eur:.4f}")
+                    print(f"✅ Using MEXC USDT for {sym}: {mex[mex_usdt_sym]:.4f} → €{bn_eur:.4f}")
                 else:
                     print(f"❌ No MEXC price for {mex_sym} or {mex_usdt_sym}")
+        else:
+            if bn_sym in bn_all:
+                bn_usdt = bn_all[bn_sym]
+                if bn_usdt > 0:
+                    bn_eur = bn_usdt / eur_usdt_rate
+                    exchange = 'Binance'
+                    taker_fee = BINANCE_TAKER_FEE
+            else:
+                # Try MEXC EUR pair first
+                mex_sym = bn_base + "-EUR"
+                mex_usdt_sym = bn_base + "USDT"
+                print(f"🔍 Binance missing {bn_sym}; checking MEXC: {mex_sym} or {mex_usdt_sym}")
+                if mex_sym in mex and mex[mex_sym] > 0:
+                    bn_eur = mex[mex_sym]
+                    exchange = 'MEXC'
+                    taker_fee = MEXC_TAKER_FEE
+                else:
+                    # Fallback to MEXC USDT pair
+                    if mex_usdt_sym in mex and mex[mex_usdt_sym] > 0:
+                        bn_eur = mex[mex_usdt_sym] / eur_usdt_rate
+                        exchange = 'MEXC'
+                        taker_fee = MEXC_TAKER_FEE
+                        print(f"✅ Using MEXC USDT for {sym}: {mex[mex_usdt_sym]:.4f} → €{bn_eur:.4f}")
+                    else:
+                        print(f"❌ No MEXC price for {mex_sym} or {mex_usdt_sym}")
         if bn_eur is None or bn_eur <= 0:
             print(f"❗ No valid price for {sym} on Binance or MEXC. Skipping.")
             continue

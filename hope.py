@@ -15,7 +15,7 @@ MEXC_RATE_LIMIT = 0.05    # Seconds between MEXC API calls
 BITVAVO_TAKER_FEE = 0.0025  # 0.25% taker fee for selling on Bitvavo
 BINANCE_TAKER_FEE = 0.001   # 0.1% taker fee for buying on Binance
 MEXC_TAKER_FEE = 0.0005     # 0.05% taker fee for buying on MEXC
-BLACKLIST = {'ALPHA', 'DCR', 'DATA', 'AERGO', 'ONE'}  # Exclude these base assets
+BLACKLIST = {'ALPHA', 'UP', 'DATA', 'AERGO', 'ONE'}  # Exclude these base assets
 
 # Symbol mapping for mismatches (Bitvavo base -> Binance base)
 SYMBOL_MAP = {

@@ -7,11 +7,11 @@ import sys
 BOT_TOKEN = "8202969495:AAGf1TIJH_kvY0Navr3GcUJfM3b46sOhpSw"
 CHAT_ID = "5659915827"
 THRESHOLD_PERCENT = 3.0  # Price difference threshold
-CHECK_INTERVAL = 60      # Time between full cycles in seconds
-MAX_RETRIES = 3          # Retry attempts for failed API calls
+CHECK_INTERVAL = 60  # Time between full cycles in seconds
+MAX_RETRIES = 3  # Retry attempts for failed API calls
 BINANCE_RATE_LIMIT = 0.05  # Seconds between Binance API calls
 BITVAVO_RATE_LIMIT = 0.05  # Seconds between Bitvavo API calls
-MEXC_RATE_LIMIT = 0.05    # Seconds between MEXC API calls
+MEXC_RATE_LIMIT = 0.05  # Seconds between MEXC API calls
 BITVAVO_TAKER_FEE = 0.0025  # 0.25% taker fee for selling on Bitvavo
 BINANCE_TAKER_FEE = 0.001   # 0.1% taker fee for buying on Binance
 MEXC_TAKER_FEE = 0.0005     # 0.05% taker fee for buying on MEXC
@@ -22,8 +22,8 @@ SYMBOL_MAP = {
     'LUNA': 'LUNC',   # Bitvavo LUNA is Terra Classic (Binance LUNC)
     'LUNA2': 'LUNA',  # Bitvavo LUNA2 is Terra 2.0 (Binance LUNA)
     'BTT': 'BTTC',    # Bitvavo BTT is BitTorrent (Binance BTTC)
-    'FUN': 'FUNTOKEN', # To skip Binance's mismatched FUN
-    'HNT': 'HNT' #HNT MAP
+    'FUN': 'FUNTOKEN',# To skip Binance's mismatched FUN
+    'HNT': 'HNT'      #HNT MAP
 }
 
 def send_telegram(text):
@@ -130,14 +130,11 @@ def check_arbitrage():
     if not bv:
         print("❗ No Bitvavo data. Skipping cycle. 😔")
         return
-
     bn_all = fetch_all_binance_prices()
     if not bn_all:
         print("❗ No Binance data. Skipping cycle. 😔")
         return
-
     mex = fetch_mexc_tickers()
-
     if "EURUSDT" not in bn_all:
         print("❗ EURUSDT not found in Binance prices. Skipping cycle. 😔")
         return
@@ -153,16 +150,18 @@ def check_arbitrage():
         if base in BLACKLIST:
             print(f"❗ Skipping blacklisted ticker: {base}")
             continue
+
         bn_base = SYMBOL_MAP.get(base, base)  # Use mapped Binance base if mismatch
         bn_sym = bn_base + "USDT"
         exchange = None
         taker_fee = None
         bn_eur = None
-        if base == 'FUN':
-            # Skip Binance for FUN and go straight to MEXC
-            mex_sym = 'FUN-EUR'
-            mex_usdt_sym = 'FUNUSDT'
-            print(f"🔍 Skipping Binance for FUN; checking MEXC: {mex_sym} or {mex_usdt_sym}")
+
+        if base in ['FUN', 'HNT']:  # Skip Binance completely for FUN and HNT
+            # Skip Binance for FUN and HNT → go straight to MEXC
+            mex_sym = base + '-EUR'
+            mex_usdt_sym = base + 'USDT'
+            print(f"🔍 Skipping Binance for {base}; checking MEXC: {mex_sym} or {mex_usdt_sym}")
             if mex_sym in mex and mex[mex_sym] > 0:
                 bn_eur = mex[mex_sym]
                 exchange = 'MEXC'
@@ -200,16 +199,20 @@ def check_arbitrage():
                         print(f"✅ Using MEXC USDT for {sym}: {mex[mex_usdt_sym]:.4f} → €{bn_eur:.4f}")
                     else:
                         print(f"❌ No MEXC price for {mex_sym} or {mex_usdt_sym}")
+
         if bn_eur is None or bn_eur <= 0:
             print(f"❗ No valid price for {sym} on Binance or MEXC. Skipping.")
             continue
+
         print(f"✅ {exchange} price for {sym} (EUR-converted): €{bn_eur:.4f} 💵")
 
         adjusted_bn = bn_eur * (1 + taker_fee)
         adjusted_bv = bv_bid * (1 - BITVAVO_TAKER_FEE)
+
         if adjusted_bn <= 0:
             print(f"❗ Invalid adjusted {exchange} price for {sym}: €{adjusted_bn:.4f}. Skipping.")
             continue
+
         diff = (adjusted_bv - adjusted_bn) / adjusted_bn * 100
         if diff >= THRESHOLD_PERCENT:
             found += 1

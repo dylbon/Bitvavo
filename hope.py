@@ -157,8 +157,8 @@ def check_arbitrage():
         taker_fee = None
         bn_eur = None
 
-        if base in ['FUN', 'HNT']:  # Skip Binance completely for FUN and HNT
-            # Skip Binance for FUN and HNT → go straight to MEXC
+        if base in ['FUN', 'HNT', 'POLS']:  # Skip Binance completely for FUN, HNT, POLS
+            # Skip Binance for FUN, HNT, POLS → go straight to MEXC
             mex_sym = base + '-EUR'
             mex_usdt_sym = base + 'USDT'
             print(f"🔍 Skipping Binance for {base}; checking MEXC: {mex_sym} or {mex_usdt_sym}")

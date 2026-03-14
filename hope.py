@@ -24,6 +24,7 @@ SYMBOL_MAP = {
     'BTT': 'BTTC',    # Bitvavo BTT is BitTorrent (Binance BTTC)
     'FUN': 'FUNTOKEN',# To skip Binance's mismatched FUN
     'HNT': 'HNT'      #HNT MAP
+    'UP' : 'SUPERFORM' #UP = superform
 }
 
 def send_telegram(text):

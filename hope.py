@@ -15,7 +15,7 @@ MEXC_RATE_LIMIT = 0.05  # Seconds between MEXC API calls
 BITVAVO_TAKER_FEE = 0.0025  # 0.25% taker fee for selling on Bitvavo
 BINANCE_TAKER_FEE = 0.001   # 0.1% taker fee for buying on Binance
 MEXC_TAKER_FEE = 0.0005     # 0.05% taker fee for buying on MEXC
-BLACKLIST = {'ALPHA', 'HOOK', 'ONG', 'DCR', 'STRAX'}  # Exclude these base assets
+BLACKLIST = {'ALPHA', 'XNO', 'ONG', 'DCR', 'STRAX'}  # Exclude these base assets
 
 # Symbol mapping for mismatches (Bitvavo base -> Binance base)
 SYMBOL_MAP = {
@@ -158,8 +158,26 @@ def check_arbitrage():
         taker_fee = None
         bn_eur = None
 
-        if base in ['FUN', 'HNT', 'POLS']:  # Skip Binance completely for FUN, HNT, POLS
-            # Skip Binance for FUN, HNT, POLS → go straight to MEXC
+        # === SPECIAL HANDLING FOR HOOK: ALWAYS USE MEXC ===
+        if base == 'HOOK':
+            mex_sym = 'HOOK-EUR'
+            mex_usdt_sym = 'HOOKUSDT'
+            print(f"🔍 HOOK detected - skipping Binance, checking MEXC: {mex_sym} or {mex_usdt_sym}")
+            if mex_sym in mex and mex[mex_sym] > 0:
+                bn_eur = mex[mex_sym]
+                exchange = 'MEXC'
+                taker_fee = MEXC_TAKER_FEE
+            else:
+                if mex_usdt_sym in mex and mex[mex_usdt_sym] > 0:
+                    bn_eur = mex[mex_usdt_sym] / eur_usdt_rate
+                    exchange = 'MEXC'
+                    taker_fee = MEXC_TAKER_FEE
+                    print(f"✅ Using MEXC USDT for HOOK: {mex[mex_usdt_sym]:.4f} → €{bn_eur:.4f}")
+                else:
+                    print(f"❌ No MEXC price for HOOK")
+        
+        # === SPECIAL HANDLING FOR FUN, HNT, POLS (unchanged) ===
+        elif base in ['FUN', 'HNT', 'POLS']:
             mex_sym = base + '-EUR'
             mex_usdt_sym = base + 'USDT'
             print(f"🔍 Skipping Binance for {base}; checking MEXC: {mex_sym} or {mex_usdt_sym}")
@@ -175,7 +193,9 @@ def check_arbitrage():
                     print(f"✅ Using MEXC USDT for {sym}: {mex[mex_usdt_sym]:.4f} → €{bn_eur:.4f}")
                 else:
                     print(f"❌ No MEXC price for {mex_sym} or {mex_usdt_sym}")
+        
         else:
+            # Normal flow for all other coins
             if bn_sym in bn_all:
                 bn_usdt = bn_all[bn_sym]
                 if bn_usdt > 0:

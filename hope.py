@@ -15,7 +15,7 @@ MEXC_RATE_LIMIT = 0.05  # Seconds between MEXC API calls
 BITVAVO_TAKER_FEE = 0.0025  # 0.25% taker fee for selling on Bitvavo
 BINANCE_TAKER_FEE = 0.001   # 0.1% taker fee for buying on Binance
 MEXC_TAKER_FEE = 0.0005     # 0.05% taker fee for buying on MEXC
-BLACKLIST = {'ALPHA', 'XNO', 'ONG', 'DCR', 'STRAX'}  # Exclude these base assets
+BLACKLIST = {'ALPHA', 'HOOK', 'ONG', 'DCR', 'STRAX'}  # Exclude these base assets
 
 # Symbol mapping for mismatches (Bitvavo base -> Binance base)
 SYMBOL_MAP = {
@@ -175,7 +175,25 @@ def check_arbitrage():
                     print(f"✅ Using MEXC USDT for HOOK: {mex[mex_usdt_sym]:.4f} → €{bn_eur:.4f}")
                 else:
                     print(f"❌ No MEXC price for HOOK")
-        
+
+        # === SPECIAL HANDLING FOR LRC: ALWAYS USE MEXC ===
+        elif base == 'LRC':
+            mex_sym = 'LRC-EUR'
+            mex_usdt_sym = 'LRCUSDT'
+            print(f"🔍 LRC detected - skipping Binance, checking MEXC: {mex_sym} or {mex_usdt_sym}")
+            if mex_sym in mex and mex[mex_sym] > 0:
+                bn_eur = mex[mex_sym]
+                exchange = 'MEXC'
+                taker_fee = MEXC_TAKER_FEE
+            else:
+                if mex_usdt_sym in mex and mex[mex_usdt_sym] > 0:
+                    bn_eur = mex[mex_usdt_sym] / eur_usdt_rate
+                    exchange = 'MEXC'
+                    taker_fee = MEXC_TAKER_FEE
+                    print(f"✅ Using MEXC USDT for LRC: {mex[mex_usdt_sym]:.4f} → €{bn_eur:.4f}")
+                else:
+                    print(f"❌ No MEXC price for LRC")
+
         # === SPECIAL HANDLING FOR FUN, HNT, POLS (unchanged) ===
         elif base in ['FUN', 'HNT', 'POLS']:
             mex_sym = base + '-EUR'

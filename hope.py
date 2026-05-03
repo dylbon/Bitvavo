@@ -86,15 +86,13 @@ def fetch_mexc_tickers():
             for d in data:
                 symbol = d.get("symbol", "")
                 if symbol.endswith("EUR") or symbol.endswith("USDT"):
-                    # Handle EUR pairs (hyphenated or not)
                     if symbol.endswith("EUR"):
                         if "-" in symbol and symbol.endswith("-EUR"):
-                            m = symbol  # Already formatted, e.g., "WAXP-EUR"
+                            m = symbol
                         else:
-                            m = symbol[:-3] + "-" + symbol[-3:]  # Insert hyphen, e.g., "WAXPEUR" -> "WAXP-EUR"
+                            m = symbol[:-3] + "-" + symbol[-3:]
                     else:
-                        # Handle USDT pairs, keep as-is
-                        m = symbol  # e.g., "IKAUSDT"
+                        m = symbol
                     last_price = float(d["lastPrice"])
                     prices[m] = last_price
                     print(f"✅ Last price for {m}: {last_price:.4f} {'€' if symbol.endswith('EUR') else '$'} 💶")
@@ -152,7 +150,7 @@ def check_arbitrage():
             print(f"❗ Skipping blacklisted ticker: {base}")
             continue
 
-        bn_base = SYMBOL_MAP.get(base, base)  # Use mapped Binance base if mismatch
+        bn_base = SYMBOL_MAP.get(base, base)
         bn_sym = bn_base + "USDT"
         exchange = None
         taker_fee = None
@@ -194,7 +192,25 @@ def check_arbitrage():
                 else:
                     print(f"❌ No MEXC price for LRC")
 
-        # === SPECIAL HANDLING FOR FUN, HNT, POLS (unchanged) ===
+        # === SPECIAL HANDLING FOR AI: ALWAYS USE MEXC ===
+        elif base == 'AI':
+            mex_sym = 'AI-EUR'
+            mex_usdt_sym = 'AIUSDT'
+            print(f"🔍 AI detected - skipping Binance, checking MEXC: {mex_sym} or {mex_usdt_sym}")
+            if mex_sym in mex and mex[mex_sym] > 0:
+                bn_eur = mex[mex_sym]
+                exchange = 'MEXC'
+                taker_fee = MEXC_TAKER_FEE
+            else:
+                if mex_usdt_sym in mex and mex[mex_usdt_sym] > 0:
+                    bn_eur = mex[mex_usdt_sym] / eur_usdt_rate
+                    exchange = 'MEXC'
+                    taker_fee = MEXC_TAKER_FEE
+                    print(f"✅ Using MEXC USDT for AI: {mex[mex_usdt_sym]:.4f} → €{bn_eur:.4f}")
+                else:
+                    print(f"❌ No MEXC price for AI")
+
+        # === SPECIAL HANDLING FOR FUN, HNT, POLS ===
         elif base in ['FUN', 'HNT', 'POLS']:
             mex_sym = base + '-EUR'
             mex_usdt_sym = base + 'USDT'

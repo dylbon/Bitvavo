@@ -6,7 +6,7 @@ import sys
 # === CONFIG ===
 BOT_TOKEN = "8727265719:AAFCS_QPL1B9TYWq5gdO3gQWfPIEzmwErHM"
 CHAT_ID = "5659915827"   # ← This is your chat ID
-THRESHOLD_PERCENT = 3.0  # Price difference threshold
+THRESHOLD_PERCENT = 0.0  # Price difference threshold
 CHECK_INTERVAL = 60  # Time between full cycles in seconds
 MAX_RETRIES = 3  # Retry attempts for failed API calls
 BINANCE_RATE_LIMIT = 0.05  # Seconds between Binance API calls

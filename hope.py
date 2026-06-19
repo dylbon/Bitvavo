@@ -17,15 +17,15 @@ BINANCE_TAKER_FEE = 0.001   # 0.1% taker fee for buying on Binance
 MEXC_TAKER_FEE = 0.0005     # 0.05% taker fee for buying on MEXC
 BLACKLIST = {'ALPHA', 'VTHO', 'TON', 'HIGH', 'MLN'}  # Exclude these base assets
 
-# Symbol mapping for mismatches (Bitvavo base -> Binance base)
+# Symbol mapping for mismatches (Bitvavo base -> Binance/MEXC base)
 SYMBOL_MAP = {
-    'LUNA': 'LUNC',   # Bitvavo LUNA is Terra Classic (Binance LUNC)
-    'LUNA2': 'LUNA',  # Bitvavo LUNA2 is Terra 2.0 (Binance LUNA)
-    'BTT': 'BTTC',    # Bitvavo BTT is BitTorrent (Binance BTTC)
-    'FUN': 'FUNTOKEN',# To skip Binance's mismatched FUN
-    'HNT': 'HNT',      #HNT MAP
-    'UP': 'SUPERFORM'   # Bitvavo UP is Superform on MEXC
-    'XION': 'VERONA' #XION
+    'LUNA': 'LUNC',      # Bitvavo LUNA is Terra Classic (Binance LUNC)
+    'LUNA2': 'LUNA',     # Bitvavo LUNA2 is Terra 2.0 (Binance LUNA)
+    'BTT': 'BTTC',       # Bitvavo BTT is BitTorrent (Binance BTTC)
+    'FUN': 'FUNTOKEN',   # To skip Binance's mismatched FUN
+    'HNT': 'HNT',        # HNT mapping
+    'UP': 'SUPERFORM',   # Bitvavo UP is Superform on MEXC
+    'XION': 'VERONA'     # Bitvavo XION → Verona on MEXC/Binance
 }
 
 def send_telegram(text):

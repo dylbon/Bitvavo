@@ -25,6 +25,7 @@ SYMBOL_MAP = {
     'FUN': 'FUNTOKEN',# To skip Binance's mismatched FUN
     'HNT': 'HNT',      #HNT MAP
     'UP': 'SUPERFORM'   # Bitvavo UP is Superform on MEXC
+    'XION': 'VERONA' #XION
 }
 
 def send_telegram(text):

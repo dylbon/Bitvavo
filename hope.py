@@ -23,7 +23,7 @@ SYMBOL_MAP = {
     'LUNA2': 'LUNA',     # Bitvavo LUNA2 is Terra 2.0 (Binance LUNA)
     'BTT': 'BTTC',       # Bitvavo BTT is BitTorrent (Binance BTTC)
     'FUN': 'FUNTOKEN',   # To skip Binance's mismatched FUN
-    'HNT': 'HNT',        # HNT mapping
+    'DATAIP': 'DATA',        # HNT mapping
     'UP': 'SUPERFORM',   # Bitvavo UP is Superform on MEXC
     'VERONA': 'VERONA'     # Bitvavo XION → Verona on MEXC/Binance
 }

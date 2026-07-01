@@ -229,6 +229,24 @@ def check_arbitrage():
                 else:
                     print(f"❌ No MEXC price for {mex_sym} or {mex_usdt_sym}")
         
+        # === SPECIAL HANDLING FOR DATAIP: USE MEXC "DATA" ===
+        elif base == 'DATAIP':
+            mex_sym = 'DATA-EUR'
+            mex_usdt_sym = 'DATAUSDT'
+            print(f"🔍 DATAIP detected - using MEXC DATA: {mex_sym} or {mex_usdt_sym}")
+            if mex_sym in mex and mex[mex_sym] > 0:
+                bn_eur = mex[mex_sym]
+                exchange = 'MEXC'
+                taker_fee = MEXC_TAKER_FEE
+            else:
+                if mex_usdt_sym in mex and mex[mex_usdt_sym] > 0:
+                    bn_eur = mex[mex_usdt_sym] / eur_usdt_rate
+                    exchange = 'MEXC'
+                    taker_fee = MEXC_TAKER_FEE
+                    print(f"✅ Using MEXC USDT for DATAIP: {mex[mex_usdt_sym]:.4f} → €{bn_eur:.4f}")
+                else:
+                    print(f"❌ No MEXC price for DATAIP")
+        
         else:
             # Normal flow for all other coins
             if bn_sym in bn_all:

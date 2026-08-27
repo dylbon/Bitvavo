@@ -25,7 +25,7 @@ SYMBOL_MAP = {
     'FUN': 'FUNTOKEN',   # To skip Binance's mismatched FUN
     'DATAIP': 'DATA',        # HNT mapping
     'UP': 'SUPERFORM',   # Bitvavo UP is Superform on MEXC
-    'VERONA': 'VERONA'     # Bitvavo XION → Verona on MEXC/Binance
+    'BEAM': 'BEAMX'     # Bitvavo XION → Verona on MEXC/Binance
 }
 
 def send_telegram(text):

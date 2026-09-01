@@ -211,8 +211,8 @@ def check_arbitrage():
                 else:
                     print(f"❌ No MEXC price for AI")
 
-        # === SPECIAL HANDLING FOR FUN, HNT, POLS ===
-        elif base in ['FUN', 'HNT', 'POLS']:
+        # === SPECIAL HANDLING FOR FUN, HNT, POLS, MLN ===
+        elif base in ['FUN', 'HNT', 'POLS', 'MLN']:
             mex_sym = base + '-EUR'
             mex_usdt_sym = base + 'USDT'
             print(f"🔍 Skipping Binance for {base}; checking MEXC: {mex_sym} or {mex_usdt_sym}")

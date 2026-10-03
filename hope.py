@@ -21,7 +21,7 @@ BLACKLIST = {'WMTX', 'POND', 'ACX', 'ICX', 'BTT'}  # Exclude these base assets
 SYMBOL_MAP = {
     'LUNA': 'LUNC',      # Bitvavo LUNA is Terra Classic (Binance LUNC)
     'LUNA2': 'LUNA',     # Bitvavo LUNA2 is Terra 2.0 (Binance LUNA)
-    'BTT': 'FOLD',       # Bitvavo BTT is BitTorrent (Binance BTTC)
+    'FOLD': 'BTTX',       # Bitvavo BTT is BitTorrent (Binance BTTC)
     'FUN': 'FUNTOKEN',   # To skip Binance's mismatched FUN
     'DATAIP': 'DATA',        # HNT mapping
     'UP': 'SUPERFORM',   # Bitvavo UP is Superform on MEXC
